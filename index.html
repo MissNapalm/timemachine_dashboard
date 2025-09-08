@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ChronaCore — Time Machine Control Panel (Mobile • Sci-Fi Blue)</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: { 900:"#0B0C10", 800:"#0F1117", 700:"#12141D", 600:"#141726", 500:"#171A2B" },
+            accent: { violet:"#7C5CFF", indigo:"#6366F1", blue:"#3B82F6", green:"#39D98A", magenta:"#FF5470", amber:"#FBBF24" }
+          },
+          boxShadow: {
+            glow: "0 10px 30px rgba(99,102,241,.35)",
+            soft: "0 10px 25px rgba(0,0,0,.35)"
+          },
+          borderRadius: { "2xl":"1.25rem" }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    html, body { height: 100%; }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+    .glass { backdrop-filter: saturate(160%) blur(8px); -webkit-backdrop-filter: saturate(160%) blur(8px); }
+
+    /* Card styling */
+    .os-card { position: relative; padding: 1px; border-radius: 1rem; transition: transform .25s ease, filter .25s ease; }
+    .os-card:hover { transform: translateY(-2px); filter: brightness(1.02); }
+    .os-card-inner { border-radius: inherit; background: rgba(20, 23, 38, .66); border: 1px solid rgba(255,255,255,.08); padding: 1rem; }
+    .os-card--fresh    { background: linear-gradient(135deg, rgba(59,130,246,.28), rgba(124,92,255,.28)); box-shadow: 0 10px 30px rgba(59,130,246,.20); }
+    .os-card--expiring { background: linear-gradient(135deg, rgba(251,191,36,.25), rgba(245,158,11,.25)); box-shadow: 0 10px 30px rgba(251,191,36,.15); }
+    .os-card--expired  { background: linear-gradient(135deg, rgba(255,84,112,.25), rgba(251,113,133,.25)); box-shadow: 0 10px 30px rgba(255,84,112,.15); }
+
+    .chip { font-size: 10px; line-height: 1; padding: .25rem .5rem; border-radius: .6rem; border: 1px solid rgba(255,255,255,.12); }
+    .status-panel { background: linear-gradient(135deg, rgba(59,130,246,.14), rgba(124,92,255,.12)); border: 1px solid rgba(99,102,241,.32); }
+
+    /* Mobile-first chart heights */
+    .chart-wrap { height: 220px; }
+    .chart-mini { height: 160px; }
+    @media (min-width: 640px) { .chart-wrap { height: 260px; } .chart-mini { height: 180px; } }
+  </style>
+</head>
+
+<body class="bg-ink-900 text-white antialiased">
+  <!-- Background accents (bluer) -->
+  <div class="pointer-events-none fixed inset-0 -z-10">
+    <div class="absolute -top-28 -right-28 h-80 w-80 rounded-full bg-accent-blue/20 blur-3xl" style="--tw-bg-opacity:1;background-color:rgba(59,130,246,0.2)"></div>
+    <div class="absolute top-1/3 -left-28 h-72 w-72 rounded-full bg-accent-violet/20 blur-3xl"></div>
+    <div class="absolute bottom-10 left-1/4 h-64 w-64 rounded-full" style="background: radial-gradient(closest-side, rgba(99,102,241,.22), rgba(0,0,0,0)); filter: blur(18px);"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="max-w-screen-md mx-auto px-4 pt-5">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="h-12 w-12 rounded-2xl bg-gradient-to-br from-accent-blue to-accent-violet shadow-glow grid place-items-center">
+          <svg class="h-6 w-6 text-white drop-shadow" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a1 1 0 0 1 1 1v2.07a7.002 7.002 0 0 1 5.93 5.93H21a1 1 0 1 1 0 2h-2.07a7.002 7.002 0 0 1-5.93 5.93V21a1 1 0 1 1-2 0v-2.07A7.002 7.002 0 0 1 5.07 13H3a1 1 0 1 1 0-2h2.07A7.002 7.002 0 0 1 11 5.07V3a1 1 0 0 1 1-1zM12 7a5 5 0 1 0 .001 10.001A5 5 0 0 0 12 7z"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-xl font-extrabold tracking-tight leading-tight truncate">
+            Chrona<span class="text-accent-blue" style="color:#3B82F6">Core</span> — Time Machine Control
+          </h1>
+          <p class="text-xs text-white/70 leading-tight truncate">Quantum routing • Flux regulation • Causality guards</p>
+        </div>
+      </div>
+
+      <!-- ONLINE badge -->
+      <div class="flex items-center gap-2 rounded-full px-3 py-1.5 border border-accent-blue/30 bg-accent-blue/10 text-accent-blue text-xs shrink-0">
+        <span class="h-2 w-2 rounded-full bg-accent-blue animate-pulse"></span>
+        Online
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-screen-md mx-auto px-4 pb-8">
+    <!-- Core Status + Primary Graph -->
+    <section class="mt-4">
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft">
+        <div class="p-4 sm:p-5">
+          <div class="rounded-xl status-panel p-3">
+            <div class="grid grid-cols-3 gap-3">
+              <div class="flex flex-col items-center justify-center">
+                <p class="text-[11px] text-white/60">Core Stability</p>
+                <p id="currentCore" class="text-2xl font-extrabold" style="color:#60A5FA">97%</p>
+              </div>
+              <div class="flex flex-col items-center justify-center">
+                <p class="text-[11px] text-white/60">Temporal Mode</p>
+                <p class="text-sm font-semibold" style="color:#7C5CFF">Drift-Lock</p>
+              </div>
+              <div class="flex flex-col items-center justify-center">
+                <p class="text-[11px] text-white/60">Causality</p>
+                <p class="text-sm font-semibold text-accent-green">Stable</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Temporal Flux -->
+          <div class="mt-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold">Temporal Flux (24h)</h3>
+              <div class="text-[11px] text-white/60">Target 90–100% • Controlled drift</div>
+            </div>
+            <div class="mt-2 chart-wrap">
+              <canvas id="tempChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action Deck + Stability Pack -->
+    <section class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft">
+        <div class="p-4 sm:p-5">
+          <h3 class="text-sm font-semibold mb-3">Control Deck</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition">Engage Drift-Lock</button>
+            <button class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition">Stabilize Core</button>
+            <button class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition">Prime Jump</button>
+            <button class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition">Purge Paradox</button>
+            <button class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition">Recalibrate Beacons</button>
+            <button class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold hover:bg-white/10 transition">Flux Dampeners</button>
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 text-xs">
+              <input type="checkbox" class="accent-indigo-500" checked> Safety Interlock A
+            </label>
+            <label class="flex items-center gap-2 text-xs">
+              <input type="checkbox" class="accent-indigo-500" checked> Safety Interlock B
+            </label>
+            <label class="flex items-center gap-2 text-xs col-span-2">
+              <input type="checkbox" class="accent-indigo-500"> Permit Experimental Mode
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft">
+        <div class="p-4 sm:p-5">
+          <h3 class="text-sm font-semibold">Stability Pack</h3>
+          <div class="mt-3 grid grid-cols-3 gap-2 items-center">
+            <!-- Ring -->
+            <div class="col-span-1">
+              <div class="relative w-20 h-20 mx-auto">
+                <svg class="w-full h-full" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="12" />
+                  <circle id="freshnessRing" cx="60" cy="60" r="54" fill="none" stroke="url(#freshnessGradient)" stroke-width="12" stroke-dasharray="339.3" stroke-dashoffset="100" stroke-linecap="round" transform="rotate(-90 60 60)" />
+                  <defs>
+                    <linearGradient id="freshnessGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#3B82F6" />
+                      <stop offset="100%" stop-color="#7C5CFF" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span id="freshnessPct" class="text-xl font-extrabold">94</span>
+                  <span class="text-[11px] text-white/60 font-medium">%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Small stats -->
+            <div class="col-span-2 grid grid-cols-3 gap-2">
+              <div class="rounded-lg border border-white/10 bg-ink-700/50 p-2 text-center">
+                <p class="text-[11px] text-white/60">Queue</p>
+                <p id="statTotal" class="text-lg font-extrabold">0</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-ink-700/50 p-2 text-center">
+                <p class="text-[11px] text-white/60">Stable</p>
+                <p id="statFresh" class="text-lg font-extrabold" style="color:#60A5FA">0</p>
+              </div>
+              <div class="rounded-lg border border-white/10 bg-ink-700/50 p-2 text-center">
+                <p class="text-[11px] text-white/60">Closing</p>
+                <p id="statExpiring" class="text-lg font-extrabold text-accent-amber">0</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Jumps -->
+          <div class="mt-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold">Jump Attempts (24h)</h3>
+              <span class="text-[11px] text-white/60">peaks ≈ high traffic</span>
+            </div>
+            <div class="mt-2 chart-mini">
+              <canvas id="doorChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scheduler -->
+    <section class="mt-4">
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft">
+        <div class="p-4 sm:p-5">
+          <h3 class="text-sm font-semibold mb-3">Schedule Jump</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <input id="foodName" class="col-span-2 rounded-lg border border-white/10 bg-ink-600 px-3 py-2 text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-accent-violet/60" placeholder="Target label (e.g., 'Renaissance — Florence')" />
+            <select id="foodCategory" class="rounded-lg border border-white/10 bg-ink-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-violet/60">
+              <option value="ancient">Ancient</option>
+              <option value="industrial">Industrial</option>
+              <option value="present">Present</option>
+              <option value="near-future">Near-Future</option>
+              <option value="far-future">Far-Future</option>
+              <option value="parallel">Parallel</option>
+            </select>
+            <input id="expiryDate" type="date" class="rounded-lg border border-white/10 bg-ink-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent-violet/60" />
+            <div class="col-span-2 grid grid-cols-3 gap-2">
+              <input class="rounded-lg border border-white/10 bg-ink-600 px-3 py-2 text-sm" placeholder="Year" inputmode="numeric" />
+              <input class="rounded-lg border border-white/10 bg-ink-600 px-3 py-2 text-sm" placeholder="Month" inputmode="numeric" />
+              <input class="rounded-lg border border-white/10 bg-ink-600 px-3 py-2 text-sm" placeholder="Local Offset" />
+            </div>
+            <button id="addFoodBtn" class="col-span-2 rounded-lg bg-gradient-to-br from-accent-blue to-accent-violet px-3 py-2.5 text-sm font-semibold shadow-glow hover:brightness-105 transition">Queue Jump</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Analytics Row: Battery + Paradox Risk -->
+    <section class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft">
+        <div class="p-4 sm:p-5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold">Quantum Battery</h3>
+            <span class="text-[11px] text-white/60">Charge vs Reserve</span>
+          </div>
+          <div class="mt-2 chart-mini">
+            <canvas id="batteryChart"></canvas>
+          </div>
+          <div class="mt-3 grid grid-cols-3 gap-2">
+            <button class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 transition">Boost</button>
+            <button class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 transition">Balance</button>
+            <button class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 transition">Hibernate</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft">
+        <div class="p-4 sm:p-5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold">Paradox Risk (radar)</h3>
+            <span class="text-[11px] text-white/60">lower is safer</span>
+          </div>
+          <div class="mt-2 chart-mini">
+            <canvas id="riskChart"></canvas>
+          </div>
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <button class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 transition">Auto-Mitigate</button>
+            <button class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 transition">Audit Timeline</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Windows Lists -->
+    <section class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft">
+        <div class="p-4 sm:p-5">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-sm font-bold" style="color:#60A5FA">Stable Windows</h2>
+            <div class="text-[11px] text-white/60">Safest to travel</div>
+          </div>
+          <div id="freshList" class="mt-3 space-y-3"></div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft">
+        <div class="p-4 sm:p-5">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-sm font-bold text-accent-amber">Closing Soon</h2>
+            <div class="text-[11px] text-white/60">&lt; 72 hours</div>
+          </div>
+          <div id="expiringList" class="mt-3 space-y-3"></div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl border border-white/10 bg-ink-800/60 shadow-soft sm:col-span-2">
+        <div class="p-4 sm:p-5">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-sm font-bold text-accent-magenta">Closed Windows</h2>
+            <div class="text-[11px] text-white/60">Re-align required</div>
+          </div>
+          <div id="expiredList" class="mt-3 space-y-3"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="max-w-screen-md mx-auto px-4 pb-8">
+    <div class="flex items-center justify-between text-[11px] text-white/50">
+      <span>© <span id="year"></span> ChronaCore — Demo</span>
+      <span>Blue-purple UI • Local-first</span>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    /* ----------------------------
+       Queue (fake data) + Rendering
+    -----------------------------*/
+    const foodItems = [];
+
+    const foodNameEl = document.getElementById("foodName");
+    const foodCategoryEl = document.getElementById("foodCategory");
+    const expiryDateEl = document.getElementById("expiryDate");
+    const addFoodBtn = document.getElementById("addFoodBtn");
+
+    const statTotal = document.getElementById("statTotal");
+    const statFresh = document.getElementById("statFresh");
+    const statExpiring = document.getElementById("statExpiring");
+
+    const freshList = document.getElementById("freshList");
+    const expiringList = document.getElementById("expiringList");
+    const expiredList = document.getElementById("expiredList");
+
+    const defaultDate = new Date(); defaultDate.setDate(defaultDate.getDate() + 7);
+    expiryDateEl.value = defaultDate.toISOString().split('T')[0];
+
+    addFoodBtn.addEventListener("click", () => {
+      const name = (foodNameEl.value || "").trim();
+      const category = foodCategoryEl.value;
+      const expiryDate = expiryDateEl.value;
+      if (!name || !expiryDate) { alert("Please enter a target label and window close date."); return; }
+      foodItems.push({ id: Date.now(), name, category, expiryDate, addedDate: todayISO() });
+      foodNameEl.value = "";
+      expiryDateEl.value = defaultDate.toISOString().split('T')[0];
+      renderFoodItems();
+    });
+
+    function todayISO() { return new Date().toISOString().split('T')[0]; }
+    function getDateOffset(days) { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().split('T')[0]; }
+
+    function foodStatus(expiryDate) {
+      const today = new Date(), exp = new Date(expiryDate);
+      const diffDays = Math.ceil((exp - today) / 86400000);
+      if (diffDays < 0) return "expired";
+      if (diffDays <= 3) return "expiring";
+      return "fresh";
+    }
+
+    function removeItem(id) {
+      const idx = foodItems.findIndex(i => i.id === id);
+      if (idx >= 0) { foodItems.splice(idx, 1); renderFoodItems(); }
+    }
+
+    function renderFoodItems() {
+      const fresh    = foodItems.filter(i => foodStatus(i.expiryDate) === "fresh");
+      const expiring = foodItems.filter(i => foodStatus(i.expiryDate) === "expiring");
+      const expired  = foodItems.filter(i => foodStatus(i.expiryDate) === "expired");
+
+      statTotal.textContent    = foodItems.length;
+      statFresh.textContent    = fresh.length;
+      statExpiring.textContent = expiring.length;
+
+      updateStabilityRing(fresh.length, expiring.length, expired.length);
+
+      renderList(fresh, freshList, "fresh");
+      renderList(expiring, expiringList, "expiring");
+      renderList(expired, expiredList, "expired");
+    }
+
+    function renderList(items, container, status) {
+      if (!items.length) { container.innerHTML = `<div class="text-sm text-white/50 border border-white/10 rounded-xl p-4">No entries</div>`; return; }
+      container.innerHTML = "";
+
+      for (const item of items) {
+        const chipClass = status === "expired"
+          ? "bg-accent-magenta/15 border-accent-magenta/40 text-accent-magenta"
+          : status === "expiring"
+          ? "bg-accent-amber/15 border-accent-amber/40 text-accent-amber"
+          : "bg-[rgba(59,130,246,.15)] border border-[rgba(59,130,246,.4)] text-[rgba(96,165,250,1)]";
+
+        const ringClass = status === "expired"
+          ? "os-card os-card--expired"
+          : status === "expiring"
+          ? "os-card os-card--expiring"
+          : "os-card os-card--fresh";
+
+        const avatarGrad = status === "expired"
+          ? "from-accent-magenta to-rose-500"
+          : status === "expiring"
+          ? "from-accent-amber to-orange-500"
+          : "from-accent-blue to-accent-violet";
+
+        const days = Math.ceil((new Date(item.expiryDate) - new Date()) / 86400000);
+        const expiryText = days < 0 ? `closed ${Math.abs(days)}d ago` : (days === 0 ? "closes today" : `closes in ${days}d`);
+
+        const niceStatus = status === "fresh" ? "stable" : (status === "expiring" ? "closing" : "closed");
+
+        const card = document.createElement("div");
+        card.className = ringClass;
+        card.innerHTML = `
+          <div class="os-card-inner">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-br ${avatarGrad} grid place-items-center text-white font-bold text-sm shrink-0">
+                  ${eraIcon(item.category)}
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-semibold leading-tight truncate">${escapeHtml(item.name)}</h3>
+                  <p class="text-xs text-white/60 truncate">${item.category} • ${expiryText}</p>
+                </div>
+              </div>
+              <div class="flex gap-2 items-center">
+                <span class="chip ${chipClass}">${niceStatus}</span>
+                <button class="text-white/40 hover:text-white/80 transition" aria-label="Remove" onclick="(${removeItem.toString()})(${item.id})">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    function eraIcon(category) {
+      const map = { "ancient":"🏺","industrial":"🏭","present":"🕰️","near-future":"🚀","far-future":"🪐","parallel":"♾️" };
+      return map[category] || "🧭";
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    function updateStabilityRing(freshCount, expiringCount, expiredCount) {
+      const total = freshCount + expiringCount + expiredCount;
+      const pct = total ? Math.round((freshCount / total) * 100) : 0;
+      const ring = document.getElementById('freshnessRing');
+      const pctEl = document.getElementById('freshnessPct');
+      const C = 2 * Math.PI * 54;
+      ring.style.strokeDasharray = C;
+      ring.style.strokeDashoffset = C - (C * pct / 100);
+      pctEl.textContent = pct;
+    }
+
+    /* ----------------------------
+       Charts (Flux line + Jumps + Battery + Risk)
+    -----------------------------*/
+    let tempChart, doorChart, batteryChart, riskChart;
+
+    const COLORS = {
+      blue:  "#3B82F6", blueFill:  "rgba(59,130,246,0.18)",
+      violet:"#7C5CFF", violetFill:"rgba(124,92,255,0.18)",
+      green: "#39D98A", greenFill: "rgba(57,217,138,0.16)"
+    };
+
+    const TEMP_BASE = { core: [], sink: [], noise: [], phases: [] };
+    const DOOR_BASE = { values: [], phases: [] };
+    let BATTERY_BASE = 78; // %
+    const RISK_BASE = { values: [], phases: [] };
+
+    function chartBaseOptions() {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        animation: false, // manual vertical wobble
+        plugins: {
+          legend: { labels: { color: "rgba(255,255,255,0.9)", boxWidth: 10, boxHeight: 10 } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${Math.round(ctx.parsed.y)}` } }
+        },
+        scales: {
+          x: { grid: { color: "rgba(255,255,255,0.08)" }, ticks: { color: "rgba(255,255,255,0.85)", maxRotation: 0, autoSkip: true } },
+          y: { grid: { color: "rgba(255,255,255,0.08)" }, ticks: { color: "rgba(255,255,255,0.85)" } }
+        }
+      };
+    }
+
+    function generateTempSeries() {
+      const labels = [];
+      const now = new Date();
+      for (let i = 23; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 3600000);
+        const hh = d.getHours().toString().padStart(2,"0");
+        labels.push(`${hh}:00`);
+      }
+      const core  = labels.map((_, i) => 96 + 1.2 * Math.sin(i * 0.25) + rnd(-0.6, 0.6));
+      const sink  = labels.map((_, i) => 50 + 6.0 * Math.sin(i * 0.22 + 0.7) + rnd(-3, 3));
+      const noise = labels.map((_, i) => 10 + 3.0 * Math.sin(i * 0.35 + 1.2) + rnd(-1.2, 1.2)); // for display only
+      return { labels, core, sink, noise };
+    }
+
+    function generateJumps24h() {
+      const labels = [];
+      const now = new Date();
+      for (let i = 23; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 3600000);
+        const hh = d.getHours().toString().padStart(2,"0");
+        labels.push(`${hh}:00`);
+      }
+      const data = labels.map((_, i) => {
+        const hour = (new Date(now.getTime() - (23 - i) * 3600000)).getHours();
+        let base = 1 + (hour >= 7 && hour <= 9 ? 2 : 0) + (hour >= 12 && hour <= 14 ? 3 : 0) + (hour >= 18 && hour <= 21 ? 4 : 0);
+        return Math.max(0, Math.round(base + rnd(-1, 1)));
+      });
+      return { labels, data };
+    }
+
+    function createCharts() {
+      // Temporal Flux (line)
+      const t = generateTempSeries();
+      tempChart = new Chart(document.getElementById("tempChart").getContext("2d"), {
+        type: "line",
+        data: {
+          labels: t.labels,
+          datasets: [
+            { label: "Core Stability (%)", data: t.core,  borderColor: COLORS.blue,   backgroundColor: COLORS.blueFill,   fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2.25 },
+            { label: "Flux Sink (index)",  data: t.sink,  borderColor: COLORS.violet, backgroundColor: COLORS.violetFill, fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2.25 },
+            { label: "Chrono Noise",       data: t.noise, borderColor: COLORS.green,  backgroundColor: COLORS.greenFill,  fill: true, tension: 0.35, pointRadius: 0, borderWidth: 1.75 }
+          ]
+        },
+        options: { 
+          ...chartBaseOptions(),
+          scales: { 
+            x: chartBaseOptions().scales.x,
+            y: { ...chartBaseOptions().scales.y, suggestedMin: 0, suggestedMax: 110 }
+          }
+        }
+      });
+      TEMP_BASE.core   = t.core.slice();
+      TEMP_BASE.sink   = t.sink.slice();
+      TEMP_BASE.noise  = t.noise.slice();
+      TEMP_BASE.phases = t.labels.map(() => Math.random() * Math.PI * 2);
+
+      // Jump Attempts (bar)
+      const d = generateJumps24h();
+      doorChart = new Chart(document.getElementById("doorChart").getContext("2d"), {
+        type: "bar",
+        data: { 
+          labels: d.labels, 
+          datasets: [{ label: "Jumps", data: d.data, borderColor: COLORS.blue, backgroundColor: COLORS.blueFill, borderWidth: 1 }]
+        },
+        options: { 
+          ...chartBaseOptions(),
+          scales: { 
+            x: chartBaseOptions().scales.x, 
+            y: { ...chartBaseOptions().scales.y, beginAtZero: true, suggestedMax: 10 } 
+          }
+        }
+      });
+      DOOR_BASE.values = d.data.slice();
+      DOOR_BASE.phases = d.labels.map(() => Math.random() * Math.PI * 2);
+
+      // Quantum Battery (doughnut)
+      const bctx = document.getElementById("batteryChart").getContext("2d");
+      batteryChart = new Chart(bctx, {
+        type: "doughnut",
+        data: {
+          labels: ["Charge", "Reserve"],
+          datasets: [{
+            data: [BATTERY_BASE, 100 - BATTERY_BASE],
+            backgroundColor: [COLORS.blue, "rgba(255,255,255,0.08)"],
+            borderWidth: 0,
+            hoverOffset: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "68%",
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true }
+          }
+        }
+      });
+
+      // Paradox Risk (radar)
+      const riskLabels = ["Bootstrap", "Grandfather", "Causal Loops", "Information Leak", "Identity Clash"];
+      const riskValues = riskLabels.map((_, i) => 20 + 40 * Math.abs(Math.sin(i * 1.3 + 0.6)) + rnd(-6, 6));
+      riskChart = new Chart(document.getElementById("riskChart").getContext("2d"), {
+        type: "radar",
+        data: {
+          labels: riskLabels,
+          datasets: [{
+            label: "Risk",
+            data: riskValues,
+            borderColor: COLORS.violet,
+            backgroundColor: COLORS.violetFill,
+            borderWidth: 2,
+            pointRadius: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          scales: {
+            r: {
+              angleLines: { color: "rgba(255,255,255,0.08)" },
+              grid: { color: "rgba(255,255,255,0.08)" },
+              pointLabels: { color: "rgba(255,255,255,0.85)", font: { size: 10 } },
+              ticks: { display: false, beginAtZero: true, max: 100 }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+      RISK_BASE.values = riskValues.slice();
+      RISK_BASE.phases = riskValues.map(() => Math.random() * Math.PI * 2);
+    }
+
+    // Vertical "breathing" — no horizontal motion
+    function startVerticalWobble() {
+      const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) return;
+
+      let t = 0;
+      let last = performance.now();
+      let throttle = 0;
+
+      const ampCore  = 1.15; // %
+      const ampSink  = 3.6;  // index
+      const ampNoise = 1.0;  // units
+      const speed = 0.9;     // radians/second
+
+      function frame(now) {
+        const dt = (now - last) / 1000;
+        last = now;
+        throttle += dt;
+        t += speed * dt;
+
+        if (throttle >= 0.12) {
+          throttle = 0;
+
+          // Flux line chart
+          if (tempChart) {
+            const core = tempChart.data.datasets[0].data;
+            const sink = tempChart.data.datasets[1].data;
+            const noise = tempChart.data.datasets[2].data;
+
+            for (let i = 0; i < core.length; i++) {
+              const phase = TEMP_BASE.phases[i];
+              const windowMod = 0.85 + 0.15 * Math.sin(i * 0.35);
+              core[i]  = clamp(90, 100, TEMP_BASE.core[i]  + Math.sin(t + phase)      * ampCore  * windowMod);
+              sink[i]  = clamp(30,  70,  TEMP_BASE.sink[i]  + Math.sin(t*0.9 + phase)  * ampSink  * windowMod * 0.85);
+              noise[i] = clamp( 5,  18,  TEMP_BASE.noise[i] + Math.sin(t*1.2 + phase)  * ampNoise * windowMod * 0.9);
+            }
+            tempChart.update('none');
+
+            const current = core[core.length - 1];
+            document.getElementById("currentCore").textContent = `${Math.round(current)}%`;
+          }
+
+          // Jumps bar
+          if (doorChart) {
+            const bars = doorChart.data.datasets[0].data;
+            for (let i = 0; i < bars.length; i++) {
+              const base = DOOR_BASE.values[i];
+              const phase = DOOR_BASE.phases[i];
+              bars[i] = Math.max(0, Math.round(base * (1 + 0.05 * Math.sin(t*0.6 + phase))));
+            }
+            doorChart.update('none');
+          }
+
+          // Battery doughnut
+          if (batteryChart) {
+            const charge = 75 + 5 * Math.sin(t * 0.5) + rnd(-0.5, 0.5);
+            batteryChart.data.datasets[0].data = [Math.max(0, Math.min(100, charge)), Math.max(0, 100 - charge)];
+            batteryChart.update('none');
+          }
+
+          // Risk radar
+          if (riskChart) {
+            const data = riskChart.data.datasets[0].data;
+            for (let i = 0; i < data.length; i++) {
+              const base = RISK_BASE.values[i];
+              const phase = RISK_BASE.phases[i];
+              data[i] = clamp(5, 95, base + 4 * Math.sin(t * 0.7 + phase));
+            }
+            riskChart.update('none');
+          }
+        }
+
+        if (document.visibilityState !== 'hidden') {
+          requestAnimationFrame(frame);
+        } else {
+          document.addEventListener('visibilitychange', () => {
+            last = performance.now();
+            requestAnimationFrame(frame);
+          }, { once: true });
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function clamp(min, max, v){ return Math.max(min, Math.min(max, v)); }
+    function rnd(a,b){ return a + Math.random()*(b-a); }
+
+    /* ----------------------------
+       Boot — populate with fake data
+    -----------------------------*/
+    document.addEventListener("DOMContentLoaded", () => {
+      // Fake jump windows
+      const demo = [
+        { id: 1, name: "Renaissance — Florence",            category: "ancient",      expiryDate: getDateOffset(6),  addedDate: getDateOffset(-1) },
+        { id: 2, name: "Industrial Revolution — London",    category: "industrial",   expiryDate: getDateOffset(2),  addedDate: getDateOffset(-4) },
+        { id: 3, name: "Parallel-3 — New York",             category: "parallel",     expiryDate: getDateOffset(1),  addedDate: getDateOffset(-1) },
+        { id: 4, name: "Near-Future — Lunar Gateway",       category: "near-future",  expiryDate: getDateOffset(9),  addedDate: getDateOffset(-2) },
+        { id: 5, name: "Far-Future — Proxima Outpost",      category: "far-future",   expiryDate: getDateOffset(12), addedDate: getDateOffset(-2) },
+        { id: 6, name: "Present — Calibration Marker",      category: "present",      expiryDate: getDateOffset(30), addedDate: getDateOffset(-10) },
+        { id: 7, name: "Ancient — Library of Alexandria",   category: "ancient",      expiryDate: getDateOffset(3),  addedDate: getDateOffset(-1) },
+        { id: 8, name: "Industrial — Telegraph Debut",      category: "industrial",   expiryDate: getDateOffset(-1), addedDate: getDateOffset(-5) }
+      ];
+      foodItems.splice(0, foodItems.length, ...demo);
+      renderFoodItems();
+
+      createCharts();
+      startVerticalWobble();
+    });
+  </script>
+</body>
+</html>
