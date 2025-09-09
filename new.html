@@ -546,7 +546,7 @@
     const RISK_BASE = { 
       values: [], 
       phases: [],
-      interpolationSpeed: 0.02, // How quickly the risk levels interpolate to new values
+      interpolationSpeed: 0.15, // How quickly the risk levels interpolate to new values
       spikeMagnitudes: [], // Tracks current spike magnitudes for each risk category
       categoryShiftTime: 0, // Time until next category shift
       activeCategory: -1, // Currently "active" risk category
@@ -939,7 +939,7 @@
               // Create more dynamic, unpredictable data changes
               
               // Base oscillation (keeps some consistency)
-              const baseOscillation = RISK_BASE.values[i] + 15 * Math.sin(t * 1.5 + RISK_BASE.phases[i]);
+              const baseOscillation = 30 + 45 * Math.sin(t * 1.8 + RISK_BASE.phases[i]);
               
               // Add randomized "risk spikes" that come and go
               const spikeChance = 0.0001; // 3% chance per update
@@ -952,7 +952,7 @@
               // Random chance to create new spike
               else if (Math.random() < spikeChance) {
                 if (!RISK_BASE.spikeMagnitudes) RISK_BASE.spikeMagnitudes = Array(data.length).fill(0);
-                RISK_BASE.spikeMagnitudes[i] = Math.random() * 25; // Random spike magnitude
+                RISK_BASE.spikeMagnitudes[i] = 20 + Math.random() * 50; // Random spike magnitude
               }
               
               // Occasional full category shift (major risk change in one area)
@@ -978,7 +978,7 @@
               }
               
               // Apply active category boost if this is the currently focused risk
-              const categoryBoost = (i === RISK_BASE.activeCategory) ? 20 * Math.sin(t * 3) : 0;
+              const categoryBoost = (i === RISK_BASE.activeCategory) ? 50 * Math.sin(t * 2.5) : 0;
               
               // Combine all factors to create the final data point
               const spikeFactor = (RISK_BASE.spikeMagnitudes && RISK_BASE.spikeMagnitudes[i]) || 0;
