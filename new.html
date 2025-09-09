@@ -942,12 +942,12 @@
               const baseOscillation = RISK_BASE.values[i] + 15 * Math.sin(t * 1.5 + RISK_BASE.phases[i]);
               
               // Add randomized "risk spikes" that come and go
-              const spikeChance = 0.03; // 3% chance per update
+              const spikeChance = 0.0001; // 3% chance per update
               const currentSpikeFactor = (RISK_BASE.spikeMagnitudes && RISK_BASE.spikeMagnitudes[i]) || 0;
               
               // Decay existing spikes
               if (currentSpikeFactor > 0) {
-                RISK_BASE.spikeMagnitudes[i] = Math.max(0, currentSpikeFactor - 0.5);
+                RISK_BASE.spikeMagnitudes[i] = Math.max(0, currentSpikeFactor - dt * 8);
               } 
               // Random chance to create new spike
               else if (Math.random() < spikeChance) {
@@ -971,7 +971,7 @@
                 } while (newCategory === oldCategory && data.length > 1);
                 
                 RISK_BASE.activeCategory = newCategory;
-                RISK_BASE.categoryShiftTime = 3 + Math.random() * 7; // 3-10 seconds until next shift
+                RISK_BASE.categoryShiftTime = 8 + Math.random() * 12; // 3-10 seconds until next shift
                 
                 // Log the category shift for debugging (can be removed)
                 console.log(`Risk focus shifted to: ${labels[newCategory]}`);
